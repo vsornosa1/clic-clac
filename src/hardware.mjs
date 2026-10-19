@@ -249,13 +249,45 @@ function resetButton() {
 // ---------------------------------------------------------------------------
 // Cables, ports, shadows and labels
 // ---------------------------------------------------------------------------
+const FLOW_COUNT = { A: 4, B: 4, users: 6 };
+const LANE = 5.2;
+
+const quadAt = (a, c, b, t) => {
+  const u = 1 - t;
+  return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+};
+
 function cable(name, from, to, sag) {
   const a = at(from);
   const b = at(to);
-  const mx = (a[0] + b[0]) / 2;
-  const my = (a[1] + b[1]) / 2 + sag;
-  const d = `M${hx(a[0])} ${hx(a[1])}Q${hx(mx)} ${hx(my)} ${hx(b[0])} ${hx(b[1])}`;
-  return `<g data-part="link.${name}"><path class="cc-cable-case" d="${d}"/><path class="cc-cable-core" d="${d}"/></g>`;
+  const c = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + sag];
+  const d = `M${hx(a[0])} ${hx(a[1])}Q${hx(c[0])} ${hx(c[1])} ${hx(b[0])} ${hx(b[1])}`;
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const n = [-dy / len, dx / len];
+  const count = FLOW_COUNT[name];
+  const dots = [];
+  for (let i = 0; i < count; i++) {
+    const t = i / count;
+    const [x, y] = quadAt(a, c, b, t);
+    dots.push(
+      `<circle class="cc-dot cc-req" data-dot="${name}:req:${i}" cx="${hx(x - LANE * n[0])}" cy="${hx(y - LANE * n[1])}" r="3.2"/>`,
+      `<circle class="cc-dot cc-resp" data-dot="${name}:resp:${i}" cx="${hx(x + LANE * n[0])}" cy="${hx(y + LANE * n[1])}" r="2.6"/>`,
+    );
+  }
+  return {
+    name,
+    svg: `<g data-part="link.${name}" data-flow="none"><path class="cc-cable-case" d="${d}"/><path class="cc-cable-core" d="${d}"/><g class="cc-flow" aria-hidden="true">${dots.join("")}</g></g>`,
+    curve: { a, c, b, n, count },
+  };
+}
+
+function noData(key, x, y, z) {
+  const [px, py] = at([x, y, z]);
+  const w = 62;
+  const h = 18;
+  return `<g class="cc-nodata" data-stale="${key}" aria-hidden="true"><rect x="${hx(px - w / 2)}" y="${hx(py - h / 2)}" width="${w}" height="${h}" rx="3"/><text x="${hx(px)}" y="${hx(py + 1)}" text-anchor="middle" dominant-baseline="middle">NO DATA</text></g>`;
 }
 
 function mat() {
@@ -330,18 +362,20 @@ export function buildHall({ audit = false } = {}) {
     tag("dark for 4.1 s", [BEACON.x - 26, BEACON.y + 30, MAT_H + 26], "dark", "cc-anno", "data-anno"),
   ].join("");
 
-  const cables = [
+  const cableDefs = [
     cable("A", [A_PLAN.x + A_PLAN.w, -10, MAT_H + 14], [S_PLAN.x, -10, MAT_H + 16], 12),
     cable("B", [B_PLAN.x, -10, MAT_H + 14], [S_PLAN.x + S_PLAN.w, -10, MAT_H + 16], 12),
     cable("users", [0, FRONT(S_PLAN), MAT_H + 10], [BEACON.x, BEACON.y - 17, MAT_H + 10], 10),
-  ].join("");
+  ];
+  const cables = cableDefs.map((c) => c.svg).join("") + noData("A", -52, -16, MAT_H + 32) + noData("B", 52, -16, MAT_H + 32);
+  const cableCurves = Object.fromEntries(cableDefs.map((c) => [c.name, c.curve]));
 
   const svg = k.figureSvg({
     width: W,
     height: H,
     label:
-      "Two 2U rack servers, A and B, cabled to a transfer switch, which feeds a status beacon for users. A reset button sits on the board. Green cables show the live path; a lever on the switch points at the serving server.",
+      "Two 2U rack servers, A and B, cabled to a transfer switch, which feeds a status beacon for users. Green request packets and amber response packets move along the live cable; a stopped server's port shows NO DATA. A reset button sits on the board.",
     body: `<defs><radialGradient id="cc-halo-g"><stop offset="0" stop-color="#6fc47f" stop-opacity=".5"/><stop offset=".45" stop-color="#6fc47f" stop-opacity=".28"/><stop offset="1" stop-color="#6fc47f" stop-opacity="0"/></radialGradient></defs><g data-part="hw">${items}</g>${cables}${labels}${tags}${annos}`,
   });
-  return { svg, P, V, KS, R, data: { armF: ARM_F } };
+  return { svg, P, V, KS, R, data: { armF: ARM_F, cables: cableCurves } };
 }

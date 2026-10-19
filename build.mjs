@@ -25,7 +25,7 @@ const faults = failoversPerYear(PLANT);
 const latheScript = `const G = (() => {${stripExports("lathe.mjs")}\nreturn { viewOf, scaleOf, frameAlong, frameOf, pointOf, disc, sphereOf, prismOf, arcOf, circleOf, spokesOf, ribsOf, dotsOf, saddleOf, solidOf, dot3, add3, sub3, mul3, unit3, cross3, len3, lerp3, radialOf, fillet, pathLength, tangentAlong };})();\n`;
 const liveSource = readFileSync(join(HERE, "src", "live.js"), "utf8");
 
-const liveData = `{P: ${JSON.stringify(P)}, intervals: ${JSON.stringify(INTERVALS)}, interval: ${rep.heartbeatS}, startS: ${rep.startS}, breakS: ${rep.breakS}, detectS: ${rep.detectS}, armF: ${JSON.stringify(data.armF)}, arm: ${inlineFn(armSvg)}}`;
+const liveData = `{P: ${JSON.stringify(P)}, intervals: ${JSON.stringify(INTERVALS)}, interval: ${rep.heartbeatS}, startS: ${rep.startS}, breakS: ${rep.breakS}, detectS: ${rep.detectS}, armF: ${JSON.stringify(data.armF)}, arm: ${inlineFn(armSvg)}, cables: ${JSON.stringify(data.cables)}}`;
 
 const shellScript = `<script>(function(){var a=document.querySelector("[data-about]");if(a)a.addEventListener("click",function(e){e.preventDefault();a.textContent="built with the anatomy kit";a.style.color="var(--anatomy-strong)"})})();</script>`;
 

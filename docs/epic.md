@@ -27,7 +27,7 @@ Rules:
 ### 1. High availability and failover — *done, v2 hardware*
 Two 2U rack units, a 1U transfer switch, a status beacon, three cables, one reset button.
 **Model:** heartbeat interval × misses = detection; spare ready + switch = failover; the beacon's dark time = the users' outage; MTBF/MTTR/common cause → availability and minutes a year.
-**Watch:** stop A → the annotation says `A stopped` → at 1.5 s `noticed` → the lever swings, B serves, `dark for 4.1 s`.
+**Watch:** stop A → the annotation says `A stopped` → at 1.5 s `noticed` → the lever swings, B serves, `dark for 4.1 s`; the packet stream moves from A to B and A's port shows `NO DATA`.
 
 ### 2. Rate limiting — *a token-bucket water clock*
 A glass bucket with a tap dripping tokens at `r` per second; each request must take a token to pass; a short burst can borrow from the bucket's capacity `b`.

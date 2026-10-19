@@ -1,38 +1,28 @@
-# Tasks: ha-figure v2
+# Tasks: data-flow
 
-Spec: [docs/spec-ha-page.md](../docs/spec-ha-page.md) · Plan: [plan.md](./plan.md)
+Spec: [docs/spec-data-flow.md](../docs/spec-data-flow.md)
 
-- [x] Build the hardware scene
-  - Acceptance: two 2U rack units, a 1U switch, a beacon, three cables, a reset button, board screws and contact shadows; audit passes
-  - Verify: `node build.mjs --audit` → `audit passed`, 6 items / 11 solids
-  - Files: src/hardware.mjs, build.mjs
+- [x] Task: Cable curves, lanes and NO DATA plates
+  - Acceptance: each cable carries 5 (short) or 8 (long) request dots and the same number of response dots, offset into two lanes; the two plates exist at the server ports
+  - Verify: audit passes; markup contains `data-dot` and `data-stale`
+  - Files: src/hardware.mjs
 
-- [x] Free-play state machine with reset
-  - Acceptance: click a server to stop/repair, the switch toggles auto/manual, RESET returns the exact initial state, no auto-tour; standby faults do not dark the load
-  - Verify: browser sequence (auto, manual, standby, reset)
+- [x] Task: Serialize the curves for the client
+  - Acceptance: `DATA.cables` holds `{a,c,b,n,count}` per segment
+  - Verify: built page contains `cables:` in the live data
+  - Files: build.mjs, src/hardware.mjs
+
+- [x] Task: Flow state and placement
+  - Acceptance: modes follow the spec table; positions advance at 1.2 s per segment; stopped servers show `NO DATA`; the users segment drains responses while dark
+  - Verify: browser samples; fault, manual, standby, reset
   - Files: src/live.js
 
-- [x] Hover tags and lifts
-  - Acceptance: every device lifts 2 px with a shadow, its role tag appears, nothing dims; leaving restores
-  - Verify: computed transform/opacity in the browser
-  - Files: src/live.js, src/shell.mjs, src/hardware.mjs
+- [x] Task: Tone, lane and plate styles
+  - Acceptance: cool requests, warm responses, lanes never overlap, plate legible and non-colliding; static under reduced motion
+  - Verify: 100% screenshots at rest and after a fault
+  - Files: src/shell.mjs
 
-- [x] Three beat-timed annotations
-  - Acceptance: `A stopped` at 0 s, `noticed in 1.5 s` at detection, `dark for 4.1 s` on restore; one at a time, 2.2 s hold; B faults annotate correctly
-  - Verify: 300 ms timeline poll
-  - Files: src/live.js, src/hardware.mjs, src/shell.mjs
-
-- [x] One light plate, no dark mode
-  - Acceptance: no theme toggle, no theme script, no dark CSS on any page
-  - Verify: grep for `data-theme`, `cc-theme`, `theme-toggle`
-  - Files: build.mjs, src/shell.mjs
-
-- [x] Verify the spec
-  - Acceptance: ≤40 visible words (31), one screen at 1440×900, reset/auto/manual/standby behaviour, keyboard incl `0`, zero console errors
-  - Verify: browser pass; audit passes
+- [x] Task: Verify the spec
+  - Acceptance: all eight success criteria pass; audit clean; zero console errors
+  - Verify: scripted browser pass
   - Files: —
-
-- [x] Retire superseded modules
-  - Acceptance: `src/pond.mjs` and `src/tiles.mjs` gone; nothing imports them
-  - Verify: `node build.mjs --audit`
-  - Files: src/

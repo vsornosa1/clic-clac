@@ -2,7 +2,7 @@
 
 **System design, as things you can poke.** A PC-first catalogue of engineering ideas, each drawn as a few real devices on a board and moved by the same arithmetic that decides the real thing.
 
-Hero 1: **[Two servers, one light](site/ha.html)** — high availability in one screen. Two 2U rack units are cabled to a transfer switch; the switch feeds a status beacon for users. Hover a device for its role, click a server to stop it, click the switch to change auto/manual, and press the physical RESET button to start over.
+Hero 1: **[Two servers, one light](site/ha.html)** — high availability in one screen. Two 2U rack units are cabled to a transfer switch; the switch feeds a status beacon for users. Green request packets and amber responses run in opposite lanes along the live cable, and a stopped server's port shows `NO DATA`. Hover a device for its role, click a server to stop it, click the switch to change auto/manual, and press the physical RESET button to start over.
 
 A fault plays out in three annotations: `A stopped`, then `noticed in 1.5 s`, then `dark for 4.1 s` as the beacon comes back on B. The static page carries **31 visible words**; everything else is behind one `Numbers` toggle.
 
@@ -26,6 +26,7 @@ node "$SKILL/scripts/lines.mjs" site/ha.html --out shots/lines.png      # line e
 | | |
 |---|---|
 | Plant | two 2U rack units, a 1U transfer switch, a status beacon, three cables, one reset button |
+| Flow | green requests and amber responses, two lanes, ~1.2 s per cable; `NO DATA` at a stopped server's port |
 | Health check | 500 ms heartbeat, 3 missed beats → **1.5 s** to notice a stopped server |
 | Spare server | ready in **2.5 s** |
 | Switch | moves in **0.12 s** |

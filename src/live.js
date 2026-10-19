@@ -14,9 +14,17 @@ const links = { A: $('[data-part="link.A"]'), B: $('[data-part="link.B"]'), user
 const START = DATA.startS;
 const BREAK = DATA.breakS;
 const ARM = { A: 0.45, B: -0.45 };
+const CABLES = DATA.cables;
+const DOT_LANE = 5.2;
+
+const quadAt = (a, c, b, t) => {
+  const u = 1 - t;
+  return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+};
 
 const S = {
   t: 0,
+  flow: 0,
   interval: DATA.interval,
   mode: "auto",
   units: {
@@ -100,12 +108,14 @@ function reset() {
   S.swing = { from: ARM.A, to: ARM.A, start: 0, live: false, now: ARM.A };
   S.bus = { downAt: null, restoredAt: null, dead: 0, detectS: 0 };
   S.pending = null;
+  S.flow = 0;
   clearAnnotations();
   draw(tick(0));
 }
 
 function tick(dt) {
   S.t += dt;
+  if (!still.matches) S.flow = (S.flow + dt / 1.2) % 1;
   for (const key of ["A", "B"]) {
     const u = S.units[key];
     if (u.running) {
@@ -166,6 +176,17 @@ function draw({ down }) {
   setLink("A", !down && S.source === "A");
   setLink("B", !down && S.source === "B");
   setLink("users", !down);
+  const draining =
+    down &&
+    ((S.pending && healthy(S.pending.to)) ||
+      S.bus.restoredAt !== null ||
+      S.t - (S.bus.downAt ?? S.t) < 1.2);
+  const lane = (key) => (!down && S.source === key && healthy(key) ? "both" : "none");
+  setFlow("A", lane("A"));
+  setFlow("B", lane("B"));
+  setFlow("users", !down ? "both" : draining ? "resp" : "none");
+  stage.dataset.stale = ["A", "B"].filter((key) => !S.units[key].running).join(" ");
+  placeDots();
   const text = down ? `${S.mode} · light out` : `${S.mode} · ${S.source} serving · light on`;
   if (readout.textContent !== text) readout.textContent = text;
   if (status) {
@@ -180,6 +201,32 @@ function setLink(name, live) {
   const group = links[name];
   if (!group) return;
   group.dataset.state = live ? "live" : "dead";
+}
+
+function setFlow(name, mode) {
+  const group = links[name];
+  if (group && group.dataset.flow !== mode) group.dataset.flow = mode;
+}
+
+function placeDots() {
+  for (const name of ["A", "B", "users"]) {
+    const group = links[name];
+    const curve = CABLES[name];
+    if (!group || !curve) continue;
+    const mode = group.dataset.flow;
+    if (mode === "none") continue;
+    const phase = still.matches ? 0 : S.flow;
+    for (const el of group.querySelectorAll(".cc-dot")) {
+      const [, tone, index] = el.dataset.dot.split(":");
+      if (mode === "req" && tone === "resp") continue;
+      if (mode === "resp" && tone === "req") continue;
+      const raw = (phase + Number(index) / curve.count) % 1;
+      const [x, y] = quadAt(curve.a, curve.c, curve.b, tone === "resp" ? 1 - raw : raw);
+      const lane = tone === "req" ? -DOT_LANE : DOT_LANE;
+      el.setAttribute("cx", Math.round((x + curve.n[0] * lane) * 100) / 100);
+      el.setAttribute("cy", Math.round((y + curve.n[1] * lane) * 100) / 100);
+    }
+  }
 }
 
 function toggle(lamp, on) {
