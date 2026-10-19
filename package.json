@@ -1,0 +1,11 @@
+{
+  "name": "clic-clac",
+  "private": true,
+  "type": "module",
+  "description": "System design, as machines you can operate",
+  "scripts": {
+    "build": "node build.mjs",
+    "audit": "node build.mjs --audit",
+    "serve": "node -e \"import('node:http').then(({default:h})=>{const fs=require('node:fs'),p=require('node:path');h.createServer((q,s)=>{const f=p.join('site',q.url==='/'?'index.html':q.url);fs.readFile(f,(e,b)=>{if(e){s.writeHead(404);s.end('not found')}else{s.writeHead(200,{'content-type':f.endsWith('.html')?'text/html; charset=utf-8':'text/plain'});s.end(b)}})}).listen(4173,()=>console.log('http://localhost:4173'))})\""
+  }
+}
